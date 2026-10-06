@@ -482,11 +482,10 @@
                 const html = `
                     <div class="bg-white p-4 rounded-lg border border-c5 shadow-sm">
                         <div class="mb-3">
-                            <span class="inline-block bg-c1 text-white text-xs font-bold px-2 py-1 rounded mb-1">Bidang ${index+1}</span>
-                            <h4 class="text-sm font-bold text-slate-800">${item.bidang}</h4>
-                            <div class="text-xs text-c8 font-medium mt-1 bg-c2/30 p-2 rounded whitespace-pre-line border border-c2/50">${item.skuo}</div>
+                            <h4 class="text-sm font-bold text-slate-800 uppercase">${item.bidang}</h4>
+                            <div class="text-xs text-c8 font-medium mt-2 bg-c2/30 p-3 rounded whitespace-pre-line border border-c2/50 leading-relaxed">${item.skuo}</div>
                         </div>
-                        <textarea data-bidang="${item.bidang}" rows="3" placeholder="Tuliskan masukan untuk bidang ini..." class="w-full px-4 py-2 text-sm rounded-lg border border-c5 focus:outline-none focus:ring-2 focus:ring-c1 transition-all dynamic-textarea bg-c4"></textarea>
+                        <textarea data-bidang="${item.bidang}" rows="3" placeholder="Tuliskan masukan untuk bidang ini..." class="w-full px-4 py-3 text-sm rounded-lg border border-c5 focus:outline-none focus:ring-2 focus:ring-c1 transition-all dynamic-textarea bg-c4"></textarea>
                     </div>
                 `;
                 container.insertAdjacentHTML('beforeend', html);
@@ -609,6 +608,41 @@
             renderTableBody();
         }
 
+        // Helper Format Waktu Indo
+        function formatDateIndo(dateStr) {
+            if(!dateStr) return "-";
+            try {
+                let dateObj;
+                // Cek apakah data berupa format ISO dari Google Sheets
+                if(dateStr.includes('T')) {
+                    dateObj = new Date(dateStr);
+                } else {
+                    // Jika data berformat string manual d/m/yyyy hh:mm:ss
+                    let parts = dateStr.split(' ');
+                    if(parts.length < 2) return dateStr;
+                    let dmy = parts[0].split('/');
+                    let hms = parts[1].split(':');
+                    dateObj = new Date(dmy[2], dmy[1] - 1, dmy[0], hms[0], hms[1], hms[2]);
+                }
+
+                if(isNaN(dateObj.getTime())) return dateStr;
+
+                const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                const d = dateObj.getDate();
+                const m = months[dateObj.getMonth()];
+                const y = dateObj.getFullYear();
+                
+                const pad = (n) => n.toString().padStart(2, '0');
+                const h = pad(dateObj.getHours());
+                const min = pad(dateObj.getMinutes());
+                const sec = pad(dateObj.getSeconds());
+                
+                return `${d} ${m} ${y}<br>${h}:${min}:${sec}`;
+            } catch(e) {
+                return dateStr;
+            }
+        }
+
         function renderTableBody() {
             const tbody = document.getElementById('rekapTableBody');
             tbody.innerHTML = "";
@@ -627,6 +661,7 @@
                 if(currentSortCol === 'Timestamp') {
                     const parseDate = (dStr) => {
                         if(!dStr) return 0;
+                        if(dStr.includes('T')) return new Date(dStr).getTime();
                         let parts = dStr.split(' ');
                         if(parts.length < 2) return 0;
                         let [day, mo, yr] = parts[0].split('/');
@@ -680,16 +715,22 @@
                 }
                 if(masukanHtml === '') masukanHtml = '<span class="text-slate-400 italic">Tidak ada masukan/kosong</span>';
 
+                let formattedTime = formatDateIndo(item.Timestamp);
+
                 const tr = `
                     <tr class="hover:bg-slate-50 border-b border-c5">
-                        <td class="px-4 py-4 text-xs text-slate-500 whitespace-nowrap">${item.Timestamp}</td>
-                        <td class="px-4 py-4 align-top">
-                            <div class="font-bold text-slate-800 text-sm mb-1">${item.Nama}</div>
+                        <td class="px-4 py-4 text-xs text-slate-600 whitespace-nowrap align-middle text-center font-medium leading-relaxed">${formattedTime}</td>
+                        <td class="px-4 py-4 align-middle text-center">
+                            <div class="font-bold text-slate-800 text-sm mb-1 uppercase">${item.Nama}</div>
                             <div class="text-xs text-slate-600 mb-1"><span class="font-semibold text-c1">DPW:</span> ${item.DPW}</div>
                             <div class="text-xs text-slate-600 mb-1"><span class="font-semibold text-c1">Amanah:</span> ${item.Amanah}</div>
                             ${item.Nama_SKUO ? `<div class="text-xs text-slate-600"><span class="font-semibold text-c1">SKUO:</span> ${item.Nama_SKUO}</div>` : ''}
                         </td>
-                        <td class="px-4 py-4 text-xs align-top">${masukanHtml}</td>
+                        <td class="px-4 py-4 text-xs align-top">
+                            <div class="flex flex-col gap-3">
+                                ${masukanHtml}
+                            </div>
+                        </td>
                     </tr>
                 `;
                 tbody.insertAdjacentHTML('beforeend', tr);
