@@ -258,11 +258,11 @@
                 </div>
 
                 <div class="overflow-x-auto w-full custom-scroll">
-                    <table class="w-full text-sm text-left align-top min-w-max" id="rekapTable">
+                    <table class="w-full text-sm text-left align-middle min-w-max" id="rekapTable">
                         <thead class="text-xs text-slate-500 bg-c4 uppercase border-b border-c5">
                             <tr>
                                 <th class="px-4 py-3 font-semibold cursor-pointer hover:bg-c5 transition-colors sort-icon" onclick="sortTable('Timestamp')">Waktu</th>
-                                <th class="px-4 py-3 font-semibold cursor-pointer hover:bg-c5 transition-colors sort-icon" onclick="sortTable('Nama')">Identitas</th>
+                                <th class="px-4 py-3 font-semibold cursor-pointer hover:bg-c5 transition-colors sort-icon text-center" onclick="sortTable('Nama')">Identitas</th>
                                 <th class="px-4 py-3 font-semibold w-1/2">Masukan</th>
                             </tr>
                         </thead>
@@ -311,7 +311,7 @@
         function loadDataFromServer() {
             showLoading("Sinkronisasi Data...");
             if (isSimulation) {
-                // ... dummy mode (omitted for brevity, assume script deployed)
+                // ... dummy mode
                 hideLoading();
             } else {
                 fetch(GAS_WEB_APP_URL)
@@ -333,7 +333,7 @@
             renderDynamicForm();
             renderDashboard();
             tableData = db.aspirasi || [];
-            applyFilters(); // apply filter updates filteredData & renders table
+            applyFilters(); 
         }
 
         // --- DASHBOARD RENDERER ---
@@ -358,7 +358,6 @@
                     } catch(e){}
                 });
 
-                // Dashboard Card
                 container.innerHTML += `
                     <div class="bg-white border-b-4 border-c3 p-3 rounded shadow-sm text-center flex flex-col justify-center transition-transform hover:-translate-y-1">
                         <div class="text-2xl font-bold text-c1 leading-none mb-1">${count}</div>
@@ -366,7 +365,6 @@
                     </div>
                 `;
                 
-                // Add to dropdown
                 filterDropdown.innerHTML += `<option value="${b.bidang}">${b.bidang} (${count})</option>`;
             });
         }
@@ -409,11 +407,9 @@
             kembaliKeStep1();
         }
 
-        // Capslock Listeners
         document.getElementById('formNama').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
         document.getElementById('formSKUO').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
 
-        // Conditional SKUO
         const selectAmanah = document.getElementById('formAmanah');
         const skuoContainer = document.getElementById('skuoContainer');
         const inputSKUO = document.getElementById('formSKUO');
@@ -428,7 +424,6 @@
             }
         });
 
-        // Autosearch DPW
         const inputDPW = document.getElementById('formDPW');
         const dropdownDPW = document.getElementById('dpwDropdown');
         const listDPW = document.getElementById('dpwList');
@@ -478,7 +473,7 @@
                 return;
             }
 
-            db.bidang.forEach((item, index) => {
+            db.bidang.forEach((item) => {
                 const html = `
                     <div class="bg-white p-4 rounded-lg border border-c5 shadow-sm">
                         <div class="mb-3">
@@ -527,10 +522,9 @@
             .then(res => {
                 if(res.status === 'success') {
                     hideLoading();
-                    // Show Success Screen
                     formWrapper.classList.add('hide');
                     successScreen.classList.remove('hide');
-                    loadDataFromServer(); // refresh background
+                    loadDataFromServer(); 
                 } else {
                     hideLoading();
                     Swal.fire('Gagal', res.message, 'error');
@@ -588,14 +582,12 @@
                 let masukanObj = {};
                 try { masukanObj = JSON.parse(item.Data_Masukan_JSON || '{}'); } catch(e){}
                 
-                // Filter Bidang
                 if (currentFilterBidang !== 'all') {
                     if (!masukanObj[currentFilterBidang] || masukanObj[currentFilterBidang].trim() === '') {
                         return false; 
                     }
                 }
                 
-                // Filter Search text global
                 if (term) {
                     const searchString = Object.values(item).join(' ').toLowerCase() + ' ' + Object.values(masukanObj).join(' ').toLowerCase();
                     if (!searchString.includes(term)) return false;
@@ -608,16 +600,14 @@
             renderTableBody();
         }
 
-        // Helper Format Waktu Indo
+        // Helper Format Waktu Indo dengan 2 baris (Tanggal & Jam terpisah)
         function formatDateIndo(dateStr) {
             if(!dateStr) return "-";
             try {
                 let dateObj;
-                // Cek apakah data berupa format ISO dari Google Sheets
                 if(dateStr.includes('T')) {
                     dateObj = new Date(dateStr);
                 } else {
-                    // Jika data berformat string manual d/m/yyyy hh:mm:ss
                     let parts = dateStr.split(' ');
                     if(parts.length < 2) return dateStr;
                     let dmy = parts[0].split('/');
@@ -637,7 +627,7 @@
                 const min = pad(dateObj.getMinutes());
                 const sec = pad(dateObj.getSeconds());
                 
-                return `${d} ${m} ${y}<br>${h}:${min}:${sec}`;
+                return `<div>${d} ${m} ${y}</div><div class="mt-1">${h}:${min}:${sec}</div>`;
             } catch(e) {
                 return dateStr;
             }
@@ -654,7 +644,6 @@
                 return;
             }
 
-            // Sort logic
             filteredData.sort((a, b) => {
                 let valA = a[currentSortCol] || "";
                 let valB = b[currentSortCol] || "";
@@ -676,7 +665,6 @@
                 return 0;
             });
 
-            // Pagination logic
             const totalRows = filteredData.length;
             const rpp = rowsPerPage === 'all' ? totalRows : parseInt(rowsPerPage);
             const totalPages = rowsPerPage === 'all' ? 1 : Math.ceil(totalRows / rpp);
@@ -690,10 +678,8 @@
                 let masukanObj = {};
                 try { masukanObj = JSON.parse(item.Data_Masukan_JSON || '{}'); } catch(e){}
                 
-                // Formatter Masukan Berdasarkan Filter
                 let masukanHtml = '';
                 if (currentFilterBidang !== 'all') {
-                    // Jika di-filter, tampilkan 1 bidang saja
                     masukanHtml = `
                         <div class="bg-c4 p-2 rounded border border-c5">
                             <span class="font-bold text-c1 block mb-1">${currentFilterBidang}</span>
@@ -701,7 +687,6 @@
                         </div>
                     `;
                 } else {
-                    // Tampilkan semua yg terisi
                     for (let [bid, val] of Object.entries(masukanObj)) {
                         if (val && val.trim() !== '') {
                             masukanHtml += `
