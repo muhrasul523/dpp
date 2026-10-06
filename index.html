@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Title, Favicon & Open Graph (WA Preview) -->
+    <title>Serap Aspirasi - Wahdah Islamiyah</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/muhrasul523/dpp/main/logo_wahdah_islamiyah.png" type="image/png">
+    
+    <meta property="og:title" content="Serap Aspirasi - DPP Bersama Seluruh DPW Wahdah Islamiyah">
+    <meta property="og:description" content="Untuk Penyusunan Program Kerja DPP tahun 2027">
+    <meta property="og:image" content="https://raw.githubusercontent.com/muhrasul523/dpp/main/flyer_serap_aspirasi.jpg">
+    <meta property="og:type" content="website">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SheetJS (Excel Export) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF & AutoTable (PDF Export) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        c1: '#138e9e', // Utama
+                        c2: '#c1f0f4', // Highlight Soft
+                        c3: '#75bfc8', // Accent
+                        c4: '#fbfbfb', // Background Body
+                        c5: '#e8e8e8', // Border/Disabled
+                        c6: '#d79405', // Sekunder (Gold)
+                        c7: '#a81616', // Tersier (Maroon)
+                        c8: '#036c79', // Hover Utama
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fbfbfb; }
+        
+        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #e8e8e8; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #75bfc8; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #138e9e; }
+
+        .tab-content { display: none; opacity: 0; transition: opacity 0.3s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+        .hide { display: none !important; }
+
+        .sort-icon::after { content: '\2195'; margin-left: 5px; opacity: 0.3; }
+        .sort-asc::after { content: '\2191'; opacity: 1; color: #138e9e; }
+        .sort-desc::after { content: '\2193'; opacity: 1; color: #138e9e; }
+    </style>
+</head>
+<body class="text-slate-800 relative min-h-screen flex flex-col">
+
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-[100] flex flex-col justify-center items-center backdrop-blur-sm hide">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-c1 mb-4"></div>
+        <p class="text-c1 font-semibold text-lg" id="loadingText">Memuat Data...</p>
+    </div>
+
+    <header class="bg-c1 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-inner overflow-hidden flex-shrink-0">
+                    <img src="https://raw.githubusercontent.com/muhrasul523/dpp/main/logo_wahdah_islamiyah.png" alt="Logo WI" class="w-10 h-10 object-contain">
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg md:text-xl leading-tight uppercase text-white tracking-wide">Serap Aspirasi</h1>
+                    <p class="text-xs md:text-sm text-c2 font-medium">DPP Bersama Seluruh DPW Wahdah Islamiyah<br><span class="opacity-80">untuk Penyusunan Program Kerja DPP tahun 2027</span></p>
+                </div>
+            </div>
+            
+            <div class="flex gap-2 w-full sm:w-auto overflow-x-auto">
+                <button onclick="switchTab('form')" id="btnTabForm" class="whitespace-nowrap px-4 py-2 border-b-4 border-c6 font-semibold text-white transition-all hover:bg-c8 rounded-t-md">Form Pengisian</button>
+                <button onclick="switchTab('rekap')" id="btnTabRekap" class="whitespace-nowrap px-4 py-2 border-b-4 border-transparent text-c2 hover:text-white transition-all hover:bg-c8 rounded-t-md">Tab Rekap</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto px-4 py-6 flex-grow">
+        
+        <div id="tabForm" class="tab-content active max-w-3xl mx-auto">
+            
+            <!-- Layar Sukses (Disembunyikan default) -->
+            <div id="successScreen" class="hide bg-white p-10 rounded-xl shadow-md border-t-4 border-c1 text-center">
+                <div class="w-24 h-24 bg-c2 text-c1 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Alhamdulillah!</h2>
+                <p class="text-slate-600 mb-8 leading-relaxed">Aspirasi dan masukan Anda telah berhasil dikirim dan tersimpan di sistem kami. Terima kasih atas partisipasi aktif Anda.</p>
+                <button onclick="resetToStep1()" class="bg-c1 hover:bg-c8 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-md">Kirim Aspirasi Lagi</button>
+            </div>
+
+            <!-- Wrapper Form Aktif -->
+            <div id="formWrapper" class="bg-white p-6 rounded-xl shadow-md border-t-4 border-c1">
+                
+                <!-- STEP 1: Input WA -->
+                <div id="formStep1" class="space-y-4">
+                    <div class="text-center mb-6">
+                        <h2 class="text-xl font-bold text-slate-800">Mulai Pengisian</h2>
+                        <p class="text-sm text-slate-500">Silakan masukkan nomor WhatsApp Anda terlebih dahulu</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-slate-700">No. WhatsApp <span class="text-c7">*</span></label>
+                        <input type="text" id="step1WA" placeholder="Contoh: 08123456789" class="w-full px-4 py-3 text-lg rounded-lg border border-c5 focus:outline-none focus:ring-2 focus:ring-c1 transition-all">
+                    </div>
+                    <button onclick="lanjutKeStep2()" class="w-full bg-c1 hover:bg-c8 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">
+                        Lanjut Pengisian Form
+                    </button>
+                </div>
+
+                <!-- STEP 2: Main Form -->
+                <form id="aspirasiForm" class="hide space-y-6">
+                    <div class="flex justify-between items-center border-b pb-3 border-c5">
+                        <h2 class="font-bold text-lg text-slate-800">Form Identitas & Aspirasi</h2>
+                        <button type="button" onclick="kembaliKeStep1()" class="text-sm text-slate-500 hover:text-c7 transition-colors flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                            Kembali
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <!-- WA -->
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-slate-700">No. WhatsApp</label>
+                            <input type="text" id="formWA" readonly class="w-full px-4 py-2 rounded-lg bg-c4 border border-c5 text-slate-500 font-medium">
+                        </div>
+                        
+                        <!-- Email -->
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-slate-700">Email <span class="text-c7">*</span></label>
+                            <input type="email" id="formEmail" required placeholder="email@wahdah.or.id" class="w-full px-4 py-2 rounded-lg border border-c5 focus:outline-none focus:ring-2 focus:ring-c1 transition-all">
+                        </div>
+
+                        <!-- Nama -->
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-slate-700">Nama Lengkap <span class="text-c7">*</span></label>
+                            <input type="text" id="formNama" required placeholder="Ketik nama Anda" class="w-full px-4 py-2 rounded-lg border border-c5 focus:outline-none focus:ring-2 focus:ring-c1 transition-all">
+                        </div>
+
+                        <!-- DPW -->
+                        <div class="relative">
+                            <label class="block text-sm font-semibold mb-1 text-slate-700">Nama DPW <span class="text-c7">*</span></label>
+                            <input type="text" id="formDPW" required autocomplete="off" placeholder="Cari & Pilih DPW..." class="w-full px-4 py-2 rounded-lg border border-c5 focus:outline-none focus:ring-2 focus:ring-c1 transition-all">
+                            <div id="dpwDropdown" class="absolute z-50 w-full bg-white mt-1 rounded-lg shadow-lg border border-c5 max-h-48 overflow-y-auto custom-scroll hide">
+                                <ul id="dpwList" class="py-1"></ul>
+                            </div>
+                            <input type="hidden" id="formDPWValid" value="">
+                        </div>
+
+                        <!-- Amanah -->
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-slate-700">Amanah <span class="text-c7">*</span></label>
+                            <select id="formAmanah" required class="w-full px-4 py-2 rounded-lg border border-c5 focus:outline-none focus:ring-2 focus:ring-c1 transition-all bg-white">
+                                <option value="" disabled selected>Pilih Amanah...</option>
+                                <option value="KETUA DPW">KETUA DPW</option>
+                                <option value="WAKIL KETUA DPW">WAKIL KETUA DPW</option>
+                                <option value="SEKRETARIS DPW">SEKRETARIS DPW</option>
+                                <option value="BENDAHARA DPW">BENDAHARA DPW</option>
+                                <option value="KETUA SKUO DPW">KETUA SKUO DPW</option>
+                            </select>
+                        </div>
+
+                        <!-- SKUO -->
+                        <div id="skuoContainer" class="hide">
+                            <label class="block text-sm font-semibold mb-1 text-slate-700">Nama SKUO <span class="text-c7">*</span></label>
+                            <input type="text" id="formSKUO" placeholder="Contoh: LP3Q" class="w-full px-4 py-2 rounded-lg border border-c5 focus:outline-none focus:ring-2 focus:ring-c1 transition-all">
+                        </div>
+                    </div>
+
+                    <div class="mt-8 bg-c4 p-4 rounded-xl border border-c5 shadow-inner">
+                        <div class="mb-4 pb-2 border-b border-c5">
+                            <h3 class="font-bold text-lg text-c1 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                Masukan untuk Penyusunan Program Kerja di DPP WI tahun 2027
+                            </h3>
+                            <p class="text-sm text-slate-500 italic mt-1">* Tidak wajib diisi semua. Isi sesuai kebutuhan aspirasi.</p>
+                        </div>
+                        
+                        <div id="dynamicBidangContainer" class="space-y-5">
+                            <!-- Loading Skeleton -->
+                            <div class="animate-pulse space-y-4">
+                                <div class="h-4 bg-c5 rounded w-1/2"></div>
+                                <div class="h-24 bg-c5 rounded w-full"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex justify-end">
+                        <button type="submit" class="w-full sm:w-auto bg-c6 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-lg shadow-c6/30 flex justify-center items-center gap-2">
+                            Kirim Aspirasi
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="tabRekap" class="tab-content">
+            <div class="bg-white rounded-xl shadow-md border border-c5 overflow-hidden flex flex-col">
+                
+                <!-- Dashboard & Toolbar Tabel -->
+                <div class="p-4 border-b border-c5 bg-c4 flex flex-col gap-4">
+                    
+                    <!-- Dashboard Cards -->
+                    <div class="mb-2">
+                        <h3 class="text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wider">Rekapitulasi per Bidang</h3>
+                        <div id="dashboardBidang" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                            <!-- Rendered dynamically -->
+                            <div class="animate-pulse bg-white border border-c5 p-3 rounded h-16 w-full"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row justify-between gap-4 items-center bg-white p-3 rounded-lg border border-c5 shadow-sm">
+                        <div class="flex flex-col sm:flex-row gap-3 items-center w-full md:w-auto">
+                            <select id="dtLength" onchange="changeTableLength()" class="w-full sm:w-auto px-3 py-2 rounded-lg border border-c5 text-sm focus:outline-none focus:ring-1 focus:ring-c1">
+                                <option value="10">10 Baris</option>
+                                <option value="5">5 Baris</option>
+                                <option value="20">20 Baris</option>
+                                <option value="50">50 Baris</option>
+                                <option value="all">Semua</option>
+                            </select>
+                            
+                            <!-- Filter Bidang -->
+                            <select id="dtFilterBidang" onchange="applyFilters()" class="w-full sm:w-auto px-3 py-2 rounded-lg border border-c5 text-sm focus:outline-none focus:ring-1 focus:ring-c1 bg-c4 font-medium">
+                                <option value="all">-- Semua Bidang --</option>
+                                <!-- options from db -->
+                            </select>
+
+                            <div class="relative w-full sm:w-64">
+                                <input type="text" id="dtSearch" onkeyup="applyFilters()" placeholder="Cari data..." class="w-full px-3 py-2 pl-9 rounded-lg border border-c5 text-sm focus:outline-none focus:ring-1 focus:ring-c1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2 w-full sm:w-auto justify-end">
+                            <button onclick="exportExcel()" class="bg-c1 hover:bg-c8 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Excel
+                            </button>
+                            <button onclick="exportPDF()" class="bg-c7 hover:bg-red-800 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto w-full custom-scroll">
+                    <table class="w-full text-sm text-left align-top min-w-max" id="rekapTable">
+                        <thead class="text-xs text-slate-500 bg-c4 uppercase border-b border-c5">
+                            <tr>
+                                <th class="px-4 py-3 font-semibold cursor-pointer hover:bg-c5 transition-colors sort-icon" onclick="sortTable('Timestamp')">Waktu</th>
+                                <th class="px-4 py-3 font-semibold cursor-pointer hover:bg-c5 transition-colors sort-icon" onclick="sortTable('Nama')">Identitas</th>
+                                <th class="px-4 py-3 font-semibold w-1/2">Masukan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rekapTableBody" class="divide-y divide-c5">
+                            <tr><td colspan="3" class="text-center py-8 text-slate-500">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="p-4 border-t border-c5 bg-c4 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-slate-600">
+                    <div id="dtInfo">Menampilkan 0 dari 0 entri</div>
+                    <div class="flex gap-1" id="dtPagination"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // URL WEB APP GAS YANG BENAR
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzc4elDlwh6QipR-GfyEOeeEh9-LX6IeLRRsluQh9vjGiDfq8gBAH1fcuyjiQca7KlI/exec";
+        const isSimulation = GAS_WEB_APP_URL === "";
+
+        let db = { dpw: [], bidang: [], aspirasi: [] };
+        let isRekapUnlocked = false;
+
+        // Table State
+        let tableData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        let rowsPerPage = 10;
+        let currentSortCol = 'Timestamp';
+        let sortAsc = false; 
+        let currentFilterBidang = 'all';
+
+        // Helpers Loading
+        function showLoading(text = "Memuat...") {
+            document.getElementById('loadingText').innerText = text;
+            document.getElementById('loadingOverlay').classList.remove('hide');
+        }
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hide');
+        }
+
+        window.onload = () => { loadDataFromServer(); };
+
+        function loadDataFromServer() {
+            showLoading("Sinkronisasi Data...");
+            if (isSimulation) {
+                // ... dummy mode (omitted for brevity, assume script deployed)
+                hideLoading();
+            } else {
+                fetch(GAS_WEB_APP_URL)
+                    .then(res => res.json())
+                    .then(res => {
+                        db = res;
+                        processLoadedData();
+                        hideLoading();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        hideLoading();
+                        Swal.fire('Error', 'Gagal memuat data dari server.', 'error');
+                    });
+            }
+        }
+
+        function processLoadedData() {
+            renderDynamicForm();
+            renderDashboard();
+            tableData = db.aspirasi || [];
+            applyFilters(); // apply filter updates filteredData & renders table
+        }
+
+        // --- DASHBOARD RENDERER ---
+        function renderDashboard() {
+            const container = document.getElementById('dashboardBidang');
+            const filterDropdown = document.getElementById('dtFilterBidang');
+            
+            container.innerHTML = "";
+            filterDropdown.innerHTML = '<option value="all">-- Semua Bidang --</option>';
+
+            if(!db.bidang || db.bidang.length === 0) {
+                container.innerHTML = "<div class='text-xs text-slate-500'>Tidak ada data dashboard</div>";
+                return;
+            }
+
+            db.bidang.forEach(b => {
+                let count = 0;
+                db.aspirasi.forEach(asp => {
+                    try {
+                        let masukan = JSON.parse(asp.Data_Masukan_JSON || '{}');
+                        if (masukan[b.bidang] && masukan[b.bidang].trim() !== '') count++;
+                    } catch(e){}
+                });
+
+                // Dashboard Card
+                container.innerHTML += `
+                    <div class="bg-white border-b-4 border-c3 p-3 rounded shadow-sm text-center flex flex-col justify-center transition-transform hover:-translate-y-1">
+                        <div class="text-2xl font-bold text-c1 leading-none mb-1">${count}</div>
+                        <div class="text-[10px] sm:text-xs text-slate-600 font-semibold leading-tight line-clamp-2" title="${b.bidang}">${b.bidang}</div>
+                    </div>
+                `;
+                
+                // Add to dropdown
+                filterDropdown.innerHTML += `<option value="${b.bidang}">${b.bidang} (${count})</option>`;
+            });
+        }
+
+        // --- STEP 1 & 2 FORM LOGIC ---
+        const inputStep1WA = document.getElementById('step1WA');
+        const inputFormWA = document.getElementById('formWA');
+        const formWrapper = document.getElementById('formWrapper');
+        const successScreen = document.getElementById('successScreen');
+
+        inputStep1WA.addEventListener('input', function() {
+            let val = this.value.replace(/\D/g, ''); 
+            if(val.startsWith('08')) { val = '628' + val.substring(2); }
+            this.value = val;
+        });
+
+        function lanjutKeStep2() {
+            const waVal = inputStep1WA.value;
+            if(!waVal || waVal.length < 9) {
+                Swal.fire('Perhatian', 'Masukkan No WhatsApp yang valid.', 'warning');
+                return;
+            }
+            inputFormWA.value = waVal;
+            document.getElementById('formStep1').classList.add('hide');
+            document.getElementById('aspirasiForm').classList.remove('hide');
+        }
+
+        function kembaliKeStep1() {
+            document.getElementById('aspirasiForm').classList.add('hide');
+            document.getElementById('formStep1').classList.remove('hide');
+        }
+
+        function resetToStep1() {
+            successScreen.classList.add('hide');
+            formWrapper.classList.remove('hide');
+            document.getElementById('aspirasiForm').reset();
+            document.getElementById('formDPWValid').value = "";
+            inputStep1WA.value = "";
+            document.getElementById('skuoContainer').classList.add('hide');
+            kembaliKeStep1();
+        }
+
+        // Capslock Listeners
+        document.getElementById('formNama').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+        document.getElementById('formSKUO').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+
+        // Conditional SKUO
+        const selectAmanah = document.getElementById('formAmanah');
+        const skuoContainer = document.getElementById('skuoContainer');
+        const inputSKUO = document.getElementById('formSKUO');
+        selectAmanah.addEventListener('change', function() {
+            if(this.value === 'KETUA SKUO DPW') {
+                skuoContainer.classList.remove('hide');
+                inputSKUO.setAttribute('required', 'true');
+            } else {
+                skuoContainer.classList.add('hide');
+                inputSKUO.removeAttribute('required');
+                inputSKUO.value = "";
+            }
+        });
+
+        // Autosearch DPW
+        const inputDPW = document.getElementById('formDPW');
+        const dropdownDPW = document.getElementById('dpwDropdown');
+        const listDPW = document.getElementById('dpwList');
+        const validDPW = document.getElementById('formDPWValid');
+
+        inputDPW.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            listDPW.innerHTML = "";
+            validDPW.value = ""; 
+
+            if(!query) { dropdownDPW.classList.add('hide'); return; }
+
+            const filtered = db.dpw.filter(d => d.toLowerCase().includes(query)).slice(0, 7);
+            
+            if(filtered.length > 0) {
+                filtered.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = "px-4 py-2 hover:bg-c2 cursor-pointer text-sm text-slate-700 transition-colors border-b border-c5 last:border-0";
+                    li.innerText = item;
+                    li.onclick = function() {
+                        inputDPW.value = item;
+                        validDPW.value = item;
+                        dropdownDPW.classList.add('hide');
+                    };
+                    listDPW.appendChild(li);
+                });
+            } else {
+                listDPW.innerHTML = "<li class='px-4 py-2 text-sm text-c7 italic'>Data tidak ditemukan. Wajib pilih dari daftar.</li>";
+            }
+            dropdownDPW.classList.remove('hide');
+        });
+
+        document.addEventListener('click', (e) => {
+            if(!inputDPW.contains(e.target) && !dropdownDPW.contains(e.target)) {
+                dropdownDPW.classList.add('hide');
+                if(inputDPW.value !== validDPW.value) inputDPW.value = ""; 
+            }
+        });
+
+        // --- RENDER DYNAMIC FORM ---
+        function renderDynamicForm() {
+            const container = document.getElementById('dynamicBidangContainer');
+            container.innerHTML = ""; 
+
+            if(!db.bidang || db.bidang.length === 0) {
+                container.innerHTML = "<p class='text-slate-500 italic'>Tidak ada data bidang.</p>";
+                return;
+            }
+
+            db.bidang.forEach((item, index) => {
+                const html = `
+                    <div class="bg-white p-4 rounded-lg border border-c5 shadow-sm">
+                        <div class="mb-3">
+                            <span class="inline-block bg-c1 text-white text-xs font-bold px-2 py-1 rounded mb-1">Bidang ${index+1}</span>
+                            <h4 class="text-sm font-bold text-slate-800">${item.bidang}</h4>
+                            <div class="text-xs text-c8 font-medium mt-1 bg-c2/30 p-2 rounded whitespace-pre-line border border-c2/50">${item.skuo}</div>
+                        </div>
+                        <textarea data-bidang="${item.bidang}" rows="3" placeholder="Tuliskan masukan untuk bidang ini..." class="w-full px-4 py-2 text-sm rounded-lg border border-c5 focus:outline-none focus:ring-2 focus:ring-c1 transition-all dynamic-textarea bg-c4"></textarea>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        // --- SUBMIT LOGIC ---
+        document.getElementById('aspirasiForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if(validDPW.value === "") {
+                Swal.fire('Perhatian', 'Nama DPW wajib dipilih dari daftar!', 'warning');
+                return;
+            }
+
+            let masukanData = {};
+            document.querySelectorAll('.dynamic-textarea').forEach(el => {
+                if(el.value.trim() !== '') masukanData[el.getAttribute('data-bidang')] = el.value;
+            });
+
+            const payload = {
+                wa: document.getElementById('formWA').value,
+                email: document.getElementById('formEmail').value,
+                nama: document.getElementById('formNama').value,
+                dpw: validDPW.value,
+                amanah: selectAmanah.value,
+                skuo: inputSKUO.value,
+                masukan: masukanData
+            };
+
+            showLoading("Mengirim Aspirasi...");
+
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    hideLoading();
+                    // Show Success Screen
+                    formWrapper.classList.add('hide');
+                    successScreen.classList.remove('hide');
+                    loadDataFromServer(); // refresh background
+                } else {
+                    hideLoading();
+                    Swal.fire('Gagal', res.message, 'error');
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                Swal.fire('Error', 'Terjadi kesalahan jaringan.', 'error');
+            });
+        });
+
+        // --- TABS ---
+        function switchTab(tabName) {
+            if(tabName === 'rekap' && !isRekapUnlocked) {
+                Swal.fire({
+                    title: 'Masukkan Kode Akses',
+                    input: 'password',
+                    inputPlaceholder: 'Kode...',
+                    showCancelButton: true,
+                    confirmButtonText: 'Buka',
+                    confirmButtonColor: '#138e9e',
+                }).then((result) => {
+                    if (result.isConfirmed && result.value === 'wi27') {
+                        isRekapUnlocked = true;
+                        doSwitchTab('rekap');
+                    } else if(result.isConfirmed) {
+                        Swal.fire('Gagal', 'Kode Akses Salah!', 'error');
+                    }
+                });
+                return;
+            }
+            doSwitchTab(tabName);
+        }
+
+        function doSwitchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('btnTabForm').className = "whitespace-nowrap px-4 py-2 border-b-4 border-transparent text-c2 hover:text-white transition-all hover:bg-c8 rounded-t-md";
+            document.getElementById('btnTabRekap').className = "whitespace-nowrap px-4 py-2 border-b-4 border-transparent text-c2 hover:text-white transition-all hover:bg-c8 rounded-t-md";
+            
+            if(tabName === 'form') {
+                document.getElementById('tabForm').classList.add('active');
+                document.getElementById('btnTabForm').className = "whitespace-nowrap px-4 py-2 border-b-4 border-c6 font-semibold text-white transition-all hover:bg-c8 rounded-t-md";
+            } else {
+                document.getElementById('tabRekap').classList.add('active');
+                document.getElementById('btnTabRekap').className = "whitespace-nowrap px-4 py-2 border-b-4 border-c6 font-semibold text-white transition-all hover:bg-c8 rounded-t-md";
+            }
+        }
+
+        // --- TABLE & FILTERS ---
+        function applyFilters() {
+            currentFilterBidang = document.getElementById('dtFilterBidang').value;
+            const term = document.getElementById('dtSearch').value.toLowerCase();
+            
+            filteredData = tableData.filter(item => {
+                let masukanObj = {};
+                try { masukanObj = JSON.parse(item.Data_Masukan_JSON || '{}'); } catch(e){}
+                
+                // Filter Bidang
+                if (currentFilterBidang !== 'all') {
+                    if (!masukanObj[currentFilterBidang] || masukanObj[currentFilterBidang].trim() === '') {
+                        return false; 
+                    }
+                }
+                
+                // Filter Search text global
+                if (term) {
+                    const searchString = Object.values(item).join(' ').toLowerCase() + ' ' + Object.values(masukanObj).join(' ').toLowerCase();
+                    if (!searchString.includes(term)) return false;
+                }
+                
+                return true;
+            });
+
+            currentPage = 1;
+            renderTableBody();
+        }
+
+        function renderTableBody() {
+            const tbody = document.getElementById('rekapTableBody');
+            tbody.innerHTML = "";
+
+            if(filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-slate-500">Tidak ada data ditemukan.</td></tr>`;
+                document.getElementById('dtInfo').innerText = "Menampilkan 0 data";
+                document.getElementById('dtPagination').innerHTML = "";
+                return;
+            }
+
+            // Sort logic
+            filteredData.sort((a, b) => {
+                let valA = a[currentSortCol] || "";
+                let valB = b[currentSortCol] || "";
+                if(currentSortCol === 'Timestamp') {
+                    const parseDate = (dStr) => {
+                        if(!dStr) return 0;
+                        let parts = dStr.split(' ');
+                        if(parts.length < 2) return 0;
+                        let [day, mo, yr] = parts[0].split('/');
+                        return new Date(`${yr}-${mo}-${day}T${parts[1]}`).getTime();
+                    };
+                    valA = parseDate(valA); valB = parseDate(valB);
+                } else {
+                    valA = valA.toString().toLowerCase(); valB = valB.toString().toLowerCase();
+                }
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            // Pagination logic
+            const totalRows = filteredData.length;
+            const rpp = rowsPerPage === 'all' ? totalRows : parseInt(rowsPerPage);
+            const totalPages = rowsPerPage === 'all' ? 1 : Math.ceil(totalRows / rpp);
+            if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+            
+            const startIdx = rowsPerPage === 'all' ? 0 : (currentPage - 1) * rpp;
+            const endIdx = rowsPerPage === 'all' ? totalRows : Math.min(startIdx + rpp, totalRows);
+            const paginatedData = filteredData.slice(startIdx, endIdx);
+
+            paginatedData.forEach(item => {
+                let masukanObj = {};
+                try { masukanObj = JSON.parse(item.Data_Masukan_JSON || '{}'); } catch(e){}
+                
+                // Formatter Masukan Berdasarkan Filter
+                let masukanHtml = '';
+                if (currentFilterBidang !== 'all') {
+                    // Jika di-filter, tampilkan 1 bidang saja
+                    masukanHtml = `
+                        <div class="bg-c4 p-2 rounded border border-c5">
+                            <span class="font-bold text-c1 block mb-1">${currentFilterBidang}</span>
+                            <span class="whitespace-pre-wrap text-slate-700 leading-relaxed">${masukanObj[currentFilterBidang]}</span>
+                        </div>
+                    `;
+                } else {
+                    // Tampilkan semua yg terisi
+                    for (let [bid, val] of Object.entries(masukanObj)) {
+                        if (val && val.trim() !== '') {
+                            masukanHtml += `
+                                <div class="mb-3 bg-c4 p-2 rounded border border-c5 last:mb-0">
+                                    <span class="font-bold text-c1 block mb-1">${bid}</span>
+                                    <span class="whitespace-pre-wrap text-slate-700 leading-relaxed">${val}</span>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+                if(masukanHtml === '') masukanHtml = '<span class="text-slate-400 italic">Tidak ada masukan/kosong</span>';
+
+                const tr = `
+                    <tr class="hover:bg-slate-50 border-b border-c5">
+                        <td class="px-4 py-4 text-xs text-slate-500 whitespace-nowrap">${item.Timestamp}</td>
+                        <td class="px-4 py-4 align-top">
+                            <div class="font-bold text-slate-800 text-sm mb-1">${item.Nama}</div>
+                            <div class="text-xs text-slate-600 mb-1"><span class="font-semibold text-c1">DPW:</span> ${item.DPW}</div>
+                            <div class="text-xs text-slate-600 mb-1"><span class="font-semibold text-c1">Amanah:</span> ${item.Amanah}</div>
+                            ${item.Nama_SKUO ? `<div class="text-xs text-slate-600"><span class="font-semibold text-c1">SKUO:</span> ${item.Nama_SKUO}</div>` : ''}
+                        </td>
+                        <td class="px-4 py-4 text-xs align-top">${masukanHtml}</td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', tr);
+            });
+
+            document.getElementById('dtInfo').innerText = `Menampilkan ${startIdx + 1} s.d ${endIdx} dari ${totalRows} data`;
+            renderPagination(totalPages);
+            updateSortIcons();
+        }
+
+        function renderPagination(totalPages) {
+            const container = document.getElementById('dtPagination');
+            container.innerHTML = "";
+            if(totalPages <= 1) return;
+            container.innerHTML += `<button onclick="changePage(${currentPage - 1})" class="px-3 py-1 border border-c5 rounded bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-50" ${currentPage===1?'disabled':''}>Prev</button>`;
+            for(let i=1; i<=totalPages; i++) {
+                if(i === 1 || i === totalPages || (i >= currentPage-1 && i <= currentPage+1)) {
+                    let activeCls = i === currentPage ? 'bg-c1 text-white border-c1' : 'bg-white text-slate-600 border-c5 hover:bg-slate-100';
+                    container.innerHTML += `<button onclick="changePage(${i})" class="px-3 py-1 border rounded ${activeCls}">${i}</button>`;
+                } else if (i === currentPage-2 || i === currentPage+2) {
+                    container.innerHTML += `<span class="px-2 py-1">...</span>`;
+                }
+            }
+            container.innerHTML += `<button onclick="changePage(${currentPage + 1})" class="px-3 py-1 border border-c5 rounded bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-50" ${currentPage===totalPages?'disabled':''}>Next</button>`;
+        }
+
+        function changePage(page) { currentPage = page; renderTableBody(); }
+        function changeTableLength() { rowsPerPage = document.getElementById('dtLength').value; currentPage = 1; renderTableBody(); }
+        
+        function sortTable(col) {
+            if(currentSortCol === col) sortAsc = !sortAsc;
+            else { currentSortCol = col; sortAsc = true; }
+            renderTableBody();
+        }
+
+        function updateSortIcons() {
+            document.querySelectorAll('.sort-icon').forEach(el => el.classList.remove('sort-asc', 'sort-desc'));
+            const headers = document.querySelectorAll('th');
+            headers.forEach(th => {
+                if(th.getAttribute('onclick') && th.getAttribute('onclick').includes(`'${currentSortCol}'`)) {
+                    th.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+                }
+            });
+        }
+
+        // --- EXPORT LOGIC ---
+        function getExportData() {
+            return filteredData.map(item => {
+                let masukan = {};
+                try { masukan = JSON.parse(item.Data_Masukan_JSON || '{}') } catch(e){}
+                
+                let masukanText = "";
+                if (currentFilterBidang !== 'all') {
+                    masukanText = `${currentFilterBidang}:\n${masukan[currentFilterBidang] || '-'}`;
+                } else {
+                    let parts = [];
+                    db.bidang.forEach(b => {
+                        if (masukan[b.bidang] && masukan[b.bidang].trim() !== '') {
+                            parts.push(`${b.bidang}:\n${masukan[b.bidang]}`);
+                        }
+                    });
+                    masukanText = parts.join('\n\n');
+                }
+
+                return {
+                    "Waktu": item.Timestamp,
+                    "Nama": item.Nama,
+                    "DPW": item.DPW,
+                    "Amanah": item.Amanah,
+                    "SKUO": item.Nama_SKUO || "-",
+                    "Masukan": masukanText
+                };
+            });
+        }
+
+        function exportExcel() {
+            if(filteredData.length === 0) return Swal.fire('Info', 'Tidak ada data untuk diekspor', 'info');
+            const ws = XLSX.utils.json_to_sheet(getExportData());
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Rekap Aspirasi");
+            
+            let filterName = currentFilterBidang === 'all' ? 'Semua_Bidang' : currentFilterBidang.replace(/[^a-zA-Z0-9]/g, '_');
+            XLSX.writeFile(wb, `Rekap_Aspirasi_${filterName}.xlsx`);
+        }
+
+        function exportPDF() {
+            if(filteredData.length === 0) return Swal.fire('Info', 'Tidak ada data untuk diekspor', 'info');
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'pt', 'a4'); 
+            
+            doc.setFontSize(14);
+            let title = currentFilterBidang === 'all' ? "Rekapitulasi Aspirasi Nasional WI 2027 (Semua Bidang)" : `Rekapitulasi Aspirasi Nasional WI 2027 (Bidang: ${currentFilterBidang})`;
+            doc.text(title, 40, 40);
+            
+            const expData = getExportData();
+            const bodyData = expData.map(item => [
+                item.Timestamp, 
+                `${item.Nama}\n${item.DPW}\n${item.Amanah}\n${item.SKUO}`, 
+                item.Masukan
+            ]);
+
+            doc.autoTable({
+                startY: 50,
+                head: [['Waktu', 'Identitas', 'Masukan']],
+                body: bodyData,
+                theme: 'grid',
+                headStyles: { fillColor: [19, 142, 158] }, // Warna c1 #138e9e
+                styles: { fontSize: 8, cellPadding: 5, overflow: 'linebreak' },
+                columnStyles: {
+                    0: { cellWidth: 70 },
+                    1: { cellWidth: 120 },
+                    2: { cellWidth: 'auto' }
+                }
+            });
+
+            let filterName = currentFilterBidang === 'all' ? 'Semua_Bidang' : currentFilterBidang.replace(/[^a-zA-Z0-9]/g, '_');
+            doc.save(`Rekap_Aspirasi_${filterName}.pdf`);
+        }
+    </script>
+</body>
+</html>
